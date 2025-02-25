@@ -133,7 +133,7 @@ jobs:
       - name: Generate `mihomo` rule-set
         run: |
           mkdir -p ./mihomo-ruleset/
-          domains=(private ads microsoft-cn apple-cn google-cn games-cn ai netflix disney max primevideo appletv youtube tiktok bilibili tld-proxy proxy tld-cn cn)
+          domains=(private ads microsoft-cn apple-cn google-cn games-cn ai netflix disney max primevideo appletv youtube tiktok bilibili tld-proxy proxy tld-cn cn proxylite)
           archs=(applications networktest)
 
           # Generate `mihomo` rule-set (yaml)
