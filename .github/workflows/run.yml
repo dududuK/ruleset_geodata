@@ -91,16 +91,14 @@ jobs:
         run: |
           cd ./tools/
           chmod +x ./mihomo
-          list=($(ls ./domains/))
-          for ((i = 0; i < ${#list[@]}; i++)); do
-            ./mihomo convert-ruleset domain text "./domains/${list[i]}/${list[i]}.list" ../mihomo-ruleset/${list[i]}.mrs
-          done
 
-          list=($(ls ./ips/))
-          for ((i = 0; i < ${#list[@]}; i++)); do
-            ./mihomo convert-ruleset ipcidr text "./ips/${list[i]}/${list[i]}.list" ../mihomo-ruleset/${list[i]}.mrs
+          domains_list=($(ls ./tools/domains/))
+          for domain_item in "${domains_list[@]}"; do
+              ./mihomo convert-ruleset domain text "./domains/${domain_item}/${domain_item}.list" ../mihomo-ruleset/${domain_item}.mrs
           done
-          rm -rf ./mihomo* ./domains/ ./ips/
+          # Remove temporary directories and files, but be careful not to remove needed directories
+          rm -rf ./mihomo* # Remove mihomo binary and related files in ./tools/, if any (be cautious if you expect other mihomo-* files)
+          rm -rf ./domains/ # Remove the now-empty tools/domains directory (if you are sure you don't need it anymore in ./tools/)
 
       - name: Release and upload `mihomo-ruleset` assets
         uses: svenstaro/upload-release-action@v2
