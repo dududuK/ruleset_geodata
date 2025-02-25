@@ -365,7 +365,7 @@ jobs:
 
       - name: Purge jsDelivr CDN
         run: |
-          cd ./mihomo/ || exit 1
+          # cd ./mihomo/ || exit 1
           # for file in $(ls); do
           #   curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@mihomo/${file}"
           # done
