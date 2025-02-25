@@ -16,7 +16,8 @@ jobs:
       - name: Set variables
         run: |
           echo "update_version=$(date -d '+8 hours' +%Y-%m-%d)" >> ${GITHUB_ENV}
-          echo "domains_download_url=https://raw.githubusercontent.com/dududuK/domain-list-custom/domains" >> ${GITHUB_ENV}
+          echo "domains_download_url=https://raw.githubusercontent.com/DustinWin/domain-list-custom/domains" >> ${GITHUB_ENV}
+
         shell: bash
 
       - name: Clone Repository
@@ -40,65 +41,39 @@ jobs:
           go-version-file: ./custom/go.mod
           cache-dependency-path: ./custom/go.sum
 
-      - name: Generate `mihomo` geodata
-        run: |
-          mkdir -p ./community/mydata/
-          archs1=(private ads microsoft-cn apple-cn google-cn games-cn ai networktest netflix disney max primevideo appletv youtube tiktok bilibili tld-proxy proxy tld-cn cn proxylite)
-          archs2=(private ads microsoft-cn apple-cn google-cn games-cn ai networktest tld-proxy proxy tld-cn cn)
-
-          # Generate `mihomo` geosite-all.dat
-          for arch1 in "${archs1[@]}"; do
-            curl -sSL "${domains_download_url}/${arch1}.list" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,|DOMAIN-KEYWORD' | sed -e 's/^DOMAIN,/full:/' -e 's/^DOMAIN-SUFFIX,//' -e 's/^DOMAIN-KEYWORD,/keyword:/' > "./community/mydata/${arch1}"
-          done
-          curl -sSL "${domains_download_url}/fakeip-filter.list" | sed -e 's/^DOMAIN,/full:/' -e 's/^DOMAIN-SUFFIX,//' -e 's/^DOMAIN-KEYWORD,/keyword:/' -e 's/^DOMAIN-REGEX,/regexp:/' > ./community/mydata/fakeip-filter
-          curl -sSL "${domains_download_url}/fakeip-filter-lite.list" | grep -Ev 'DOMAIN-REGEX,|ntp|time|stun' | sed -e 's/^DOMAIN,/full:/' -e 's/^DOMAIN-SUFFIX,//' > ./community/mydata/fakeip-filter-lite
-          cat <<EOF >> ./community/mydata/fakeip-filter-lite
-          keyword:ntp
-          keyword:time
-          keyword:stun
-          EOF
-          cd ./community/
-          go run ./ --datapath=./mydata/ --outputname geosite-all.dat
-
-          # Generate `mihomo` geosite-all-lite.dat
-          rm -f ./mydata/ads
-          go run ./ --datapath=./mydata/ --outputname geosite-all-lite.dat
-
-          # Generate `mihomo` geosite.dat
-          rm -f ./mydata/*
-          for arch2 in "${archs2[@]}"; do
-            curl -sSL "${domains_download_url}/${arch2}.list" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,|DOMAIN-KEYWORD' | sed -e 's/^DOMAIN,/full:/' -e 's/^DOMAIN-SUFFIX,//' -e 's/^DOMAIN-KEYWORD,/keyword:/' > "./mydata/${arch2}"
-          done
-          curl -sSL "${domains_download_url}/fakeip-filter.list" | sed -e 's/^DOMAIN,/full:/' -e 's/^DOMAIN-SUFFIX,//' -e 's/^DOMAIN-KEYWORD,/keyword:/' -e 's/^DOMAIN-REGEX,/regexp:/' > ./mydata/fakeip-filter
-          curl -sSL "${domains_download_url}/fakeip-filter-lite.list" | grep -Ev 'DOMAIN-REGEX,|ntp|time|stun' | sed -e 's/^DOMAIN,/full:/' -e 's/^DOMAIN-SUFFIX,//' > ./mydata/fakeip-filter-lite
-          cat <<EOF >> ./mydata/fakeip-filter-lite
-          keyword:ntp
-          keyword:time
-          keyword:stun
-          EOF
-          go run ./ --datapath=./mydata/ --outputname geosite.dat
-
-          # Generate `mihomo` geosite-lite.dat
-          rm -f ./mydata/ads
-          go run ./ --datapath=./mydata/ --outputname geosite-lite.dat
-
       - name: Download and unzip `mihomo` core
         run: |
+          mkdir -p ./tools/
           wget https://github.com/DustinWin/proxy-tools/releases/download/mihomo/mihomo-alpha-linux-amd64.tar.gz -O - | tar -zxf - -C ./tools/
           mv -f ./tools/CrashCore ./tools/mihomo
+
+      - name: Prepare input files for MRS
+        run: |
+          mkdir -p ./tools/domains/
+          domains=(private ads microsoft-cn apple-cn google-cn games-cn ai netflix disney max primevideo appletv youtube tiktok bilibili tld-proxy proxy tld-cn cn proxylite)
+          for domain in "${domains[@]}"; do
+            mkdir -p "./tools/domains/${domain}/"
+            curl "${domains_download_url}/${domain}.list" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,' | sed -e 's/^DOMAIN,//' -e 's/^DOMAIN-SUFFIX,/+\./' > "./tools/domains/${domain}/${domain}.list"
+          done
+          mkdir -p "./tools/domains/fakeip-filter/"
+          curl -sSL "${domains_download_url}/fakeip-filter.list" | sed -e 's/^DOMAIN,//' -e 's/^DOMAIN-SUFFIX,/+\./' -e 's/^DOMAIN-REGEX,//' -e 's/^\.//' > ./tools/domains/fakeip-filter/fakeip-filter.list
+          mkdir -p "./tools/domains/fakeip-filter-lite/"
+          curl -sSL "${domains_download_url}/fakeip-filter-lite.list" | sed -e 's/^DOMAIN,//' -e 's/^DOMAIN-SUFFIX,/+\./' -e 's/^DOMAIN-REGEX,//' -e 's/^\.//' > ./tools/domains/fakeip-filter-lite/fakeip-filter-lite.list
+
+
 
       - name: Generate `mihomo` rule-set (mrs)
         run: |
           cd ./tools/
           chmod +x ./mihomo
-
           domains_list=($(ls ./tools/domains/))
           for domain_item in "${domains_list[@]}"; do
-              ./mihomo convert-ruleset domain text "./domains/${domain_item}/${domain_item}.list" ../mihomo-ruleset/${domain_item}.mrs
+            ./mihomo convert-ruleset domain text "./domains/${domain_item}/${domain_item}.list" ../mihomo-ruleset/${domain_item}.mrs
           done
-          # Remove temporary directories and files, but be careful not to remove needed directories
-          rm -rf ./mihomo* # Remove mihomo binary and related files in ./tools/, if any (be cautious if you expect other mihomo-* files)
-          rm -rf ./domains/ # Remove the now-empty tools/domains directory (if you are sure you don't need it anymore in ./tools/)
+
+
+          rm -rf ./mihomo* # Remove mihomo binary and related files in ./tools/
+          rm -rf ./domains/ # Remove the now-empty tools/domains directory
 
       - name: Release and upload `mihomo-ruleset` assets
         uses: svenstaro/upload-release-action@v2
@@ -123,29 +98,6 @@ jobs:
           git add . && git commit -m "mihomo rule-set 规则集文件更新于 ${update_version}"
           git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           git push -f origin mihomo-ruleset
-
-      - name: Purge jsDelivr CDN
-        run: |
-          cd ./mihomo/ || exit 1
-          for file in $(ls); do
-            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@mihomo/${file}"
-          done
-          cd ../sing-box/ || exit 1
-          for file in $(ls); do
-            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@sing-box/${file}"
-          done
-          cd ../mihomo-ruleset/ || exit 1
-          for file in $(ls); do
-            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@mihomo-ruleset/${file}"
-          done
-          cd ../sing-box-ruleset-compatible/ || exit 1
-          for file in $(ls); do
-            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@sing-box-ruleset-compatible/${file}"
-          done
-          cd ../sing-box-ruleset/ || exit 1
-          for file in $(ls); do
-            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@sing-box-ruleset/${file}"
-          done
 
       - name: Delete old workflow runs
         uses: Mattraks/delete-workflow-runs@v2
