@@ -47,7 +47,8 @@ jobs:
               local domain=$1
               local type=$2
 
-              curl -sSL "${domains_download_url}/${domain}.list" | sed "$type" >> "./mihomo-ruleset/${domain}.yaml"
+              # 使用正确的 sed 语法，避免多余的 `-e` 引发错误
+              curl -sSL "${domains_download_url}/${domain}.list" | sed "$type" > "./mihomo-ruleset/${domain}.yaml"
               curl -sSL "${domains_download_url}/${domain}.list" | sed "$type" > "./mihomo-ruleset/${domain}.list"
               mkdir -p "./tools/domains/${domain}/"
               cp "./mihomo-ruleset/${domain}.list" "./tools/domains/${domain}/${domain}.list"
@@ -59,11 +60,11 @@ jobs:
 
               if [[ "$domain" == "fakeip-filter" || "$domain" == "fakeip-filter-lite" ]]; then
                   # 处理 fakeip-filter 和 fakeip-filter-lite 的特殊规则
-                  special_sed=" -e \"s/^DOMAIN,/  - '/\" -e \"s/^DOMAIN-SUFFIX,/  - '+\./\" -e \"s/^DOMAIN-REGEX,/  - '/\" -e \"s/'\./'\" -e \"s/\$/'\""
+                  special_sed="s/^DOMAIN,/  - '/; s/^DOMAIN-SUFFIX,/  - '+\./; s/^DOMAIN-REGEX,/  - '/; s/'\./'/; s/\$/'/"
                   generate_rule_set "$domain" "$special_sed"
               else
                   # 处理其他域名的规则
-                  common_sed=" -e \"s/^DOMAIN,/  - '/\" -e \"s/^DOMAIN-SUFFIX,/  - '+\./\" -e \"s/\$/'\""
+                  common_sed="s/^DOMAIN,/  - '/; s/^DOMAIN-SUFFIX,/  - '+\./; s/\$/'/"
                   generate_rule_set "$domain" "$common_sed"
               fi
           done
