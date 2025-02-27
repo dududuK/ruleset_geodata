@@ -38,59 +38,61 @@ jobs:
           mkdir -p ./mihomo-ruleset/ ./tools/domains/ ./tools/rules/
           domains=(private ads microsoft-cn apple-cn google-cn games-cn ai netflix disney max primevideo appletv youtube tiktok bilibili tld-proxy proxy tld-cn cn proxylite fakeip-filter fakeip-filter-lite)
           archs=(applications networktest)
-      
+
           generate_files() {
             local domain=$1
             local download_url="${domains_download_url}/${domain}.list"
-      
+
             echo 'payload:' > "./mihomo-ruleset/${domain}.yaml"
+            
+            # 获取下载内容
+            file_content=$(curl -sSL "$download_url")
 
             if [[ "$domain" == "fakeip-filter" || "$domain" == "fakeip-filter-lite" ]]; then
               # 对 fakeip-filter 和 fakeip-filter-lite 进行处理
-              curl -sSL "$download_url" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,|DOMAIN-REGEX,' | sed \
+              echo "$file_content" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,|DOMAIN-REGEX,' | sed \
                 -e "s/^DOMAIN,/  - '/" \
                 -e "s/^DOMAIN-SUFFIX,/  - '+\./" \
                 -e "s/^DOMAIN-REGEX,/  - '/" \
-                -e "s/'\./'/" \ 
+                -e "s/'\./'/" \
                 -e "s/$/'/" \
                 >> "./mihomo-ruleset/${domain}.yaml"
-      
-              curl -sSL "$download_url" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,|DOMAIN-REGEX,' | sed \
+
+              echo "$file_content" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,|DOMAIN-REGEX,' | sed \
                 -e 's/^DOMAIN,//' \
                 -e 's/^DOMAIN-SUFFIX,/+\./' \
                 -e 's/^DOMAIN-REGEX,//' \
-                -e 's/^\.//' \ 
+                -e 's/^\.//' \
                 > "./mihomo-ruleset/${domain}.list"
             else
               # 对其他 domain 进行处理
-              curl -sSL "$download_url" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,' | sed \
+              echo "$file_content" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,' | sed \
                 -e "s/^DOMAIN,/  - '/" \
                 -e "s/^DOMAIN-SUFFIX,/  - '+\./" \
                 -e "s/$/'/" \
                 >> "./mihomo-ruleset/${domain}.yaml"
-      
-               curl -sSL "$download_url" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,' | sed \
+
+              echo "$file_content" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,' | sed \
                 -e 's/^DOMAIN,//' \
                 -e 's/^DOMAIN-SUFFIX,/+\./' \
                 > "./mihomo-ruleset/${domain}.list"
             fi
-      
+
             mkdir -p "./tools/domains/${domain}/"
             cp "./mihomo-ruleset/${domain}.list" "./tools/domains/${domain}/${domain}.list"
           }
-      
+
           for domain in "${domains[@]}"; do
             generate_files "$domain"
           done
-      
+
           for arch in "${archs[@]}"; do
             echo 'payload:' > "./mihomo-ruleset/${arch}.yaml"
-            curl -sSL "${domains_download_url}/${arch}.list" | sed 's/^/  - /' >> "./mihomo-ruleset/${arch}.yaml" # 每行行首添加 "  - "
+            curl -sSL "${domains_download_url}/${arch}.list" | sed 's/^/  - /' >> "./mihomo-ruleset/${arch}.yaml"
             curl -sSL "${domains_download_url}/${arch}.list" > "./mihomo-ruleset/${arch}.list"
             mkdir -p "./tools/rules/${arch}/"
             cp "./mihomo-ruleset/${arch}.list" "./tools/rules/${arch}/${arch}.yaml"
           done
-
 
 
       # - name: Generate `mihomo` rule-set
