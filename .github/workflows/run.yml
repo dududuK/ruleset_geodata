@@ -10,7 +10,6 @@ on:
       - "**/README.md"
 
 env:
-  update_version: ${{ date -d '+8 hours' '+%Y-%m-%d' }}
   domains_download_url: https://raw.githubusercontent.com/dududuK/domain-list-custom/domains
   mihomo_ruleset_path: ./mihomo-ruleset
   tools_domains_path: ./tools/domains
@@ -23,6 +22,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Set update_version variable
+        run: |
+          echo "update_version=$(date -d '+8 hours' '+%Y-%m-%d')" >> ${GITHUB_ENV}
+        shell: bash
+
       - name: Checkout Repository
         uses: actions/checkout@master
 
@@ -50,9 +54,9 @@ jobs:
             # Example: DOMAIN-SUFFIX,example.com  ->  +.example.com
             local sed_domain_suffix_text='-e "s/^DOMAIN-SUFFIX,/+\./"'
 
-            # sed command to remove DOMAIN-REGEX entries and leading dot for text and mrs formats
-            # Example: DOMAIN-REGEX,^example\.com$  ->  example\.com
-            local sed_domain_regex_text='-e "s/^DOMAIN-REGEX,//" -e "s/^\.//"'
+            # sed command to remove DOMAIN-REGEX entries prefix for text and mrs formats
+            # Example: DOMAIN-REGEX,^example\.com$  ->  ^example\.com$
+            local sed_domain_regex_text='-e "s/^DOMAIN-REGEX,//"'
 
             # sed command to remove DOMAIN entries for text and mrs formats
             # Example: DOMAIN,example.com  ->  example.com
@@ -61,7 +65,7 @@ jobs:
             # sed command to transform DOMAIN-SUFFIX entries for yaml format
             # Example: DOMAIN-SUFFIX,example.com  ->   - '+.example.com'
             local sed_domain_suffix_yaml='-e "s/^DOMAIN-SUFFIX,/  - \'+\./"'
-            
+
             # sed command to transform DOMAIN entries for yaml format
             # Example: DOMAIN,example.com  ->   - 'example.com'
             local sed_domain_yaml='-e "s/^DOMAIN,/  - \'/"'
