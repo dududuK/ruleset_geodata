@@ -95,7 +95,7 @@ jobs:
               format_flag="mrs"
               sed_domain_suffix="${sed_domain_suffix_text}"
               sed_domain="${sed_domain_text}"
-              prefix='mkdir -p "${{ env.tools_domains_path }}/$name/" && curl "$domains_download_url/$name.list" | grep -E "DOMAIN,|DOMAIN-SUFFIX," | sed ${sed_domain} ${sed_domain_suffix} >'
+              prefix='mkdir -p "${{ env.tools_domains_path }}/$name/" && curl \"$domains_download_url/$name.list\" | grep -E "DOMAIN,|DOMAIN-SUFFIX," | sed ${sed_domain} ${sed_domain_suffix} >'
               suffix=".list"
               sed_content_domain='grep -E "DOMAIN,|DOMAIN-SUFFIX," | sed ${sed_domain} ${sed_domain_suffix}'
               sed_content_fakeip='sed ${sed_domain} ${sed_domain_suffix} ${sed_domain_regex_text} -e "s/^\.//"'
