@@ -41,21 +41,22 @@ jobs:
       
           generate_files() {
             local domain=$1
+            local download_url="${domains_download_url}/${domain}.list"
       
             echo 'payload:' > "./mihomo-ruleset/${domain}.yaml"
-            curl -sSL "${domains_download_url}/${domain}.list" | sed \
-              -e "s/^DOMAIN,/  - '/" \ # 转换 "DOMAIN,example.com" 为 "  - 'example.com"
-              -e "s/^DOMAIN-SUFFIX,/  - '+\./" \ # 转换 "DOMAIN-SUFFIX,example.com" 为 "  - '+.example.com"
-              -e "s/^DOMAIN-REGEX,/  - '/" \ # 转换 "DOMAIN-REGEX,regex_pattern" 为 "  - 'regex_pattern"
-              -e "s/'\./'/" \ # 尝试移除正则中的 "\."
-              -e "s/$/'/" \ # 每行末加 "'"，闭合 YAML 字符串
+            curl -sSL "$download_url" | sed \
+              -e "s/^DOMAIN,/  - '/" \
+              -e "s/^DOMAIN-SUFFIX,/  - '+\./" \
+              -e "s/^DOMAIN-REGEX,/  - '/" \
+              -e "s/'\./'/" \
+              -e "s/$/'/" \
               >> "./mihomo-ruleset/${domain}.yaml"
       
-            curl -sSL "${domains_download_url}/${domain}.list" | sed \
-              -e 's/^DOMAIN,//' \ # 删除 "DOMAIN," 前缀
-              -e 's/^DOMAIN-SUFFIX,/+\./' \ # 转换 "DOMAIN-SUFFIX,example.com" 为 "+.example.com"
-              -e 's/^DOMAIN-REGEX,//' \ # 删除 "DOMAIN-REGEX," 前缀
-              -e 's/^\.//' \ # 删除行首的点号
+            curl -sSL "$download_url" | sed \
+              -e 's/^DOMAIN,//' \
+              -e 's/^DOMAIN-SUFFIX,/+\./' \
+              -e 's/^DOMAIN-REGEX,//' \
+              -e 's/^\.//' \
               > "./mihomo-ruleset/${domain}.list"
       
             mkdir -p "./tools/domains/${domain}/"
