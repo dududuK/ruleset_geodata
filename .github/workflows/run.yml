@@ -44,7 +44,7 @@ jobs:
             local download_url="${domains_download_url}/${domain}.list"
       
             echo 'payload:' > "./mihomo-ruleset/${domain}.yaml"
-            curl -sSL "$download_url" | sed \
+            curl -sSL "$download_url" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,|DOMAIN-REGEX,' | sed \
               -e "s/^DOMAIN,/  - '/" \
               -e "s/^DOMAIN-SUFFIX,/  - '+\./" \
               -e "s/^DOMAIN-REGEX,/  - '/" \
@@ -52,7 +52,7 @@ jobs:
               -e "s/$/'/" \
               >> "./mihomo-ruleset/${domain}.yaml"
       
-            curl -sSL "$download_url" | sed \
+            curl -sSL "$download_url" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,|DOMAIN-REGEX,' | sed \
               -e 's/^DOMAIN,//' \
               -e 's/^DOMAIN-SUFFIX,/+\./' \
               -e 's/^DOMAIN-REGEX,//' \
