@@ -46,10 +46,19 @@ jobs:
           generate_rule_set() {
               local domain=$1
               local type=$2
+              local is_special=$3
 
-              # 使用正确的 sed 语法，避免多余的 `-e` 引发错误
-              curl -sSL "${domains_download_url}/${domain}.list" | sed "$type" > "./mihomo-ruleset/${domain}.yaml"
-              curl -sSL "${domains_download_url}/${domain}.list" | sed "$type" > "./mihomo-ruleset/${domain}.list"
+              # 下载并过滤必要的域名
+              if [ "$is_special" == "true" ]; then
+                  # 对 fakeip-filter 和 fakeip-filter-lite 进行特殊处理
+                  curl -sSL "${domains_download_url}/${domain}.list" | sed "$type" > "./mihomo-ruleset/${domain}.yaml"
+                  curl -sSL "${domains_download_url}/${domain}.list" | sed "$type" > "./mihomo-ruleset/${domain}.list"
+              else
+                  # 对其他域名使用 grep 过滤并严格匹配行首
+                  curl -sSL "${domains_download_url}/${domain}.list" | grep -P '^(DOMAIN,|DOMAIN-SUFFIX,)' | sed "$type" > "./mihomo-ruleset/${domain}.yaml"
+                  curl -sSL "${domains_download_url}/${domain}.list" | grep -P '^(DOMAIN,|DOMAIN-SUFFIX,)' | sed "$type" > "./mihomo-ruleset/${domain}.list"
+              fi
+
               mkdir -p "./tools/domains/${domain}/"
               cp "./mihomo-ruleset/${domain}.list" "./tools/domains/${domain}/${domain}.list"
           }
@@ -61,23 +70,22 @@ jobs:
               if [[ "$domain" == "fakeip-filter" || "$domain" == "fakeip-filter-lite" ]]; then
                   # 处理 fakeip-filter 和 fakeip-filter-lite 的特殊规则
                   special_sed="s/^DOMAIN,/  - '/; s/^DOMAIN-SUFFIX,/  - '+\./; s/^DOMAIN-REGEX,/  - '/; s/'\./'/; s/\$/'/"
-                  generate_rule_set "$domain" "$special_sed"
+                  generate_rule_set "$domain" "$special_sed" "true"
               else
                   # 处理其他域名的规则
                   common_sed="s/^DOMAIN,/  - '/; s/^DOMAIN-SUFFIX,/  - '+\./; s/\$/'/"
-                  generate_rule_set "$domain" "$common_sed"
+                  generate_rule_set "$domain" "$common_sed" "false"
               fi
           done
 
-          # 处理架构
-          for arch in "${archs[@]}"; do
-              echo 'payload:' > "./mihomo-ruleset/${arch}.yaml"
-              curl -sSL "${domains_download_url}/${arch}.list" | sed 's/^/  - /' >> "./mihomo-ruleset/${arch}.yaml"
-              curl -sSL "${domains_download_url}/${arch}.list" > "./mihomo-ruleset/${arch}.list"
-              mkdir -p "./tools/rules/${arch}/"
-              curl -sSL "${domains_download_url}/${arch}.list" > "./tools/rules/${arch}/${arch}.yaml"
-          done
-
+        # 处理架构
+        for arch in "${archs[@]}"; do
+            echo 'payload:' > "./mihomo-ruleset/${arch}.yaml"
+            curl -sSL "${domains_download_url}/${arch}.list" | sed 's/^/  - /' >> "./mihomo-ruleset/${arch}.yaml"
+            curl -sSL "${domains_download_url}/${arch}.list" > "./mihomo-ruleset/${arch}.list"
+            mkdir -p "./tools/rules/${arch}/"
+            curl -sSL "${domains_download_url}/${arch}.list" > "./tools/rules/${arch}/${arch}.yaml"
+        done
       - name: Download and unzip `mihomo` core
         run: |
           curl -sSL https://github.com/DustinWin/proxy-tools/releases/download/mihomo/mihomo-alpha-linux-amd64.tar.gz | tar -zxf - -C ./tools/
