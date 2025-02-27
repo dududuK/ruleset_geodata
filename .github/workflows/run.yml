@@ -44,20 +44,36 @@ jobs:
             local download_url="${domains_download_url}/${domain}.list"
       
             echo 'payload:' > "./mihomo-ruleset/${domain}.yaml"
-            curl -sSL "$download_url" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,|DOMAIN-REGEX,' | sed \
-              -e "s/^DOMAIN,/  - '/" \
-              -e "s/^DOMAIN-SUFFIX,/  - '+\./" \
-              -e "s/^DOMAIN-REGEX,/  - '/" \
-              -e "s/'\./'/" \
-              -e "s/$/'/" \
-              >> "./mihomo-ruleset/${domain}.yaml"
+
+            if [[ "$domain" == "fakeip-filter" || "$domain" == "fakeip-filter-lite" ]]; then
+              # 对 fakeip-filter 和 fakeip-filter-lite 进行处理
+              curl -sSL "$download_url" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,|DOMAIN-REGEX,' | sed \
+                -e "s/^DOMAIN,/  - '/" \
+                -e "s/^DOMAIN-SUFFIX,/  - '+\./" \
+                -e "s/^DOMAIN-REGEX,/  - '/" \
+                -e "s/'\./'/" \ 
+                -e "s/$/'/" \
+                >> "./mihomo-ruleset/${domain}.yaml"
       
-            curl -sSL "$download_url" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,|DOMAIN-REGEX,' | sed \
-              -e 's/^DOMAIN,//' \
-              -e 's/^DOMAIN-SUFFIX,/+\./' \
-              -e 's/^DOMAIN-REGEX,//' \
-              -e 's/^\.//' \
-              > "./mihomo-ruleset/${domain}.list"
+              curl -sSL "$download_url" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,|DOMAIN-REGEX,' | sed \
+                -e 's/^DOMAIN,//' \
+                -e 's/^DOMAIN-SUFFIX,/+\./' \
+                -e 's/^DOMAIN-REGEX,//' \
+                -e 's/^\.//' \ 
+                > "./mihomo-ruleset/${domain}.list"
+            else
+              # 对其他 domain 进行处理
+              curl -sSL "$download_url" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,' | sed \
+                -e "s/^DOMAIN,/  - '/" \
+                -e "s/^DOMAIN-SUFFIX,/  - '+\./" \
+                -e "s/$/'/" \
+                >> "./mihomo-ruleset/${domain}.yaml"
+      
+               curl -sSL "$download_url" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,' | sed \
+                -e 's/^DOMAIN,//' \
+                -e 's/^DOMAIN-SUFFIX,/+\./' \
+                > "./mihomo-ruleset/${domain}.list"
+            fi
       
             mkdir -p "./tools/domains/${domain}/"
             cp "./mihomo-ruleset/${domain}.list" "./tools/domains/${domain}/${domain}.list"
