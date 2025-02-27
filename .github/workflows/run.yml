@@ -35,54 +35,46 @@ jobs:
 
       - name: Generate `mihomo` rule-set
         run: |
+          # 创建必要的目录
           mkdir -p ./mihomo-ruleset/ ./tools/domains/ ./tools/rules/
+
+          # 定义域名和架构
           domains=(private ads microsoft-cn apple-cn google-cn games-cn ai netflix disney max primevideo appletv youtube tiktok bilibili tld-proxy proxy tld-cn cn proxylite fakeip-filter fakeip-filter-lite)
           archs=(applications networktest)
 
-          # Generate YAML and text rule-sets
+          # 函数：处理规则生成的公共部分
+          generate_rule_set() {
+              local domain=$1
+              local type=$2
+
+              curl -sSL "${domains_download_url}/${domain}.list" | sed "$type" >> "./mihomo-ruleset/${domain}.yaml"
+              curl -sSL "${domains_download_url}/${domain}.list" | sed "$type" > "./mihomo-ruleset/${domain}.list"
+              mkdir -p "./tools/domains/${domain}/"
+              cp "./mihomo-ruleset/${domain}.list" "./tools/domains/${domain}/${domain}.list"
+          }
+
+          # 处理域名
           for domain in "${domains[@]}"; do
-            echo 'payload:' > "./mihomo-ruleset/${domain}.yaml"
-          if [[ "$domain" == "fakeip-filter" || "$domain" == "fakeip-filter-lite" ]]; then
-            # 处理 fakeip-filter 和 fakeip-filter-lite 的 YAML 文件生成
-            curl -sSL "${domains_download_url}/${domain}.list" | sed \
-              -e "s/^DOMAIN,/  - '/" `# 原始格式: "DOMAIN,example.com"，转换后: "  - 'example.com"，将 DOMAIN 前缀替换为 YAML 列表项开头` \
-              -e "s/^DOMAIN-SUFFIX,/  - '+\./" `# 原始格式: "DOMAIN-SUFFIX,example.com"，转换后: "  - '+.example.com"，为后缀域名添加 "+."` \
-              -e "s/^DOMAIN-REGEX,/  - '/" `# 原始格式: "DOMAIN-REGEX,regex_pattern"，转换后: "  - 'regex_pattern"，保留正则表达式不变` \
-              -e "s/'\./'/" `# 原始格式: "'\.pattern"（若存在），转换后: "'pattern"，尝试移除正则中的 "\."（可能有误，视具体数据而定）` \
-              -e "s/$/'/" `# 原始格式: 每行末无引号，转换后: 每行末加 "'"，闭合 YAML 字符串` \
-              >> "./mihomo-ruleset/${domain}.yaml"
+              echo 'payload:' > "./mihomo-ruleset/${domain}.yaml"
 
-            # 处理 fakeip-filter 和 fakeip-filter-lite 的文本文件生成
-            curl -sSL "${domains_download_url}/${domain}.list" | sed \
-              -e 's/^DOMAIN,//' `# 原始格式: "DOMAIN,example.com"，转换后: "example.com"，删除 DOMAIN 前缀` \
-              -e 's/^DOMAIN-SUFFIX,/+\./' `# 原始格式: "DOMAIN-SUFFIX,example.com"，转换后: "+.example.com"，将前缀替换为 "+." 表示后缀` \
-              -e 's/^DOMAIN-REGEX,//' `# 原始格式: "DOMAIN-REGEX,regex_pattern"，转换后: "regex_pattern"，删除前缀保留正则表达式` \
-              -e 's/^\.//' `# 原始格式: ".example.com"（若存在），转换后: "example.com"，删除行首的点号` \
-              > "./mihomo-ruleset/${domain}.list"
-          else
-            # 处理其他 domain 的 YAML 文件生成
-            curl -sSL "${domains_download_url}/${domain}.list" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,' | sed \
-              -e "s/^DOMAIN,/  - '/" `# 原始格式: "DOMAIN,example.com"，转换后: "  - 'example.com"，将 DOMAIN 前缀替换为 YAML 列表项开头` \
-              -e "s/^DOMAIN-SUFFIX,/  - '+\./" `# 原始格式: "DOMAIN-SUFFIX,example.com"，转换后: "  - '+.example.com"，为后缀域名添加 "+."` \
-              -e "s/$/'/" `# 原始格式: 每行末无引号，转换后: 每行末加 "'"，闭合 YAML 字符串` \
-              >> "./mihomo-ruleset/${domain}.yaml"
-
-            # 处理其他 domain 的文本文件生成
-            curl -sSL "${domains_download_url}/${domain}.list" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,' | sed \
-              -e 's/^DOMAIN,//' `# 原始格式: "DOMAIN,example.com"，转换后: "example.com"，删除 DOMAIN 前缀` \
-              -e 's/^DOMAIN-SUFFIX,/+\./' `# 原始格式: "DOMAIN-SUFFIX,example.com"，转换后: "+.example.com"，将前缀替换为 "+." 表示后缀` \
-              > "./mihomo-ruleset/${domain}.list"
-          fi
-            mkdir -p "./tools/domains/${domain}/"
-            cp "./mihomo-ruleset/${domain}.list" "./tools/domains/${domain}/${domain}.list"
+              if [[ "$domain" == "fakeip-filter" || "$domain" == "fakeip-filter-lite" ]]; then
+                  # 处理 fakeip-filter 和 fakeip-filter-lite 的特殊规则
+                  special_sed=" -e \"s/^DOMAIN,/  - '/\" -e \"s/^DOMAIN-SUFFIX,/  - '+\./\" -e \"s/^DOMAIN-REGEX,/  - '/\" -e \"s/'\./'\" -e \"s/\$/'\""
+                  generate_rule_set "$domain" "$special_sed"
+              else
+                  # 处理其他域名的规则
+                  common_sed=" -e \"s/^DOMAIN,/  - '/\" -e \"s/^DOMAIN-SUFFIX,/  - '+\./\" -e \"s/\$/'\""
+                  generate_rule_set "$domain" "$common_sed"
+              fi
           done
 
+          # 处理架构
           for arch in "${archs[@]}"; do
-            echo 'payload:' > "./mihomo-ruleset/${arch}.yaml"
-            curl -sSL "${domains_download_url}/${arch}.list" | sed 's/^/  - /' >> "./mihomo-ruleset/${arch}.yaml"
-            curl -sSL "${domains_download_url}/${arch}.list" > "./mihomo-ruleset/${arch}.list"
-            mkdir -p "./tools/rules/${arch}/"
-            curl -sSL "${domains_download_url}/${arch}.list" > "./tools/rules/${arch}/${arch}.yaml"
+              echo 'payload:' > "./mihomo-ruleset/${arch}.yaml"
+              curl -sSL "${domains_download_url}/${arch}.list" | sed 's/^/  - /' >> "./mihomo-ruleset/${arch}.yaml"
+              curl -sSL "${domains_download_url}/${arch}.list" > "./mihomo-ruleset/${arch}.list"
+              mkdir -p "./tools/rules/${arch}/"
+              curl -sSL "${domains_download_url}/${arch}.list" > "./tools/rules/${arch}/${arch}.yaml"
           done
 
       - name: Download and unzip `mihomo` core
