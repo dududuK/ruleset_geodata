@@ -84,26 +84,19 @@ jobs:
             mkdir -p "./tools/rules/${arch}/"
             curl -sSL "${domains_download_url}/${arch}.list" > "./tools/rules/${arch}/${arch}.yaml"
           done
-          
+
       - name: Download and unzip `mihomo` core
         run: |
           curl -sSL https://github.com/DustinWin/proxy-tools/releases/download/mihomo/mihomo-alpha-linux-amd64.tar.gz | tar -zxf - -C ./tools/
           mv -f ./tools/CrashCore ./tools/mihomo
 
-      - name: List domains directory for debugging
-        run: |
-          ls -l ./tools/domains/ || echo "Error: ./tools/domains/ directory not found."
-
       - name: Generate `mihomo` rule-set (mrs)
         run: |
+          domains=(private ads microsoft-cn apple-cn google-cn games-cn ai netflix disney max primevideo appletv youtube tiktok bilibili tld-proxy proxy tld-cn cn proxylite fakeip-filter fakeip-filter-lite)
           cd ./tools/
           chmod +x ./mihomo
           for domain in "${domains[@]}"; do
-            if [ -f "./domains/${domain}/${domain}.list" ]; then
-              ./mihomo convert-ruleset domain text "./domains/${domain}/${domain}.list" ../mihomo-ruleset/${domain}.mrs || echo "Error: Failed to generate ../mihomo-ruleset/${domain}.mrs"
-            else
-              echo "Error: Input file ./domains/${domain}/${domain}.list does not exist."
-            fi
+            ./mihomo convert-ruleset domain text "./domains/${domain}/${domain}.list" ../mihomo-ruleset/${domain}.mrs
           done
 
       - name: Release and upload `mihomo-ruleset` assets
