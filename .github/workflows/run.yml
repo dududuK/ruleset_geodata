@@ -42,13 +42,37 @@ jobs:
           # Generate YAML and text rule-sets
           for domain in "${domains[@]}"; do
             echo 'payload:' > "./mihomo-ruleset/${domain}.yaml"
-            if [[ "$domain" == "fakeip-filter" || "$domain" == "fakeip-filter-lite" ]]; then
-              curl -sSL "${domains_download_url}/${domain}.list" | sed -e "s/^DOMAIN,/  - '/" -e "s/^DOMAIN-SUFFIX,/  - '+\./" -e "s/^DOMAIN-REGEX,/  - '/" -e "s/'\./'/" -e "s/$/'/" >> "./mihomo-ruleset/${domain}.yaml"
-              curl -sSL "${domains_download_url}/${domain}.list" | sed -e 's/^DOMAIN,//' -e 's/^DOMAIN-SUFFIX,/+\./' -e 's/^DOMAIN-REGEX,//' -e 's/^\.//' > "./mihomo-ruleset/${domain}.list"
-            else
-              curl -sSL "${domains_download_url}/${domain}.list" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,' | sed -e "s/^DOMAIN,/  - '/" -e "s/^DOMAIN-SUFFIX,/  - '+\./" -e "s/$/'/" >> "./mihomo-ruleset/${domain}.yaml"
-              curl -sSL "${domains_download_url}/${domain}.list" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,' | sed -e 's/^DOMAIN,//' -e 's/^DOMAIN-SUFFIX,/+\./' > "./mihomo-ruleset/${domain}.list"
-            fi
+          if [[ "$domain" == "fakeip-filter" || "$domain" == "fakeip-filter-lite" ]]; then
+            # 处理 fakeip-filter 和 fakeip-filter-lite 的 YAML 文件生成
+            curl -sSL "${domains_download_url}/${domain}.list" | sed \
+              -e "s/^DOMAIN,/  - '/" `# 原始格式: "DOMAIN,example.com"，转换后: "  - 'example.com"，将 DOMAIN 前缀替换为 YAML 列表项开头` \
+              -e "s/^DOMAIN-SUFFIX,/  - '+\./" `# 原始格式: "DOMAIN-SUFFIX,example.com"，转换后: "  - '+.example.com"，为后缀域名添加 "+."` \
+              -e "s/^DOMAIN-REGEX,/  - '/" `# 原始格式: "DOMAIN-REGEX,regex_pattern"，转换后: "  - 'regex_pattern"，保留正则表达式不变` \
+              -e "s/'\./'/" `# 原始格式: "'\.pattern"（若存在），转换后: "'pattern"，尝试移除正则中的 "\."（可能有误，视具体数据而定）` \
+              -e "s/$/'/" `# 原始格式: 每行末无引号，转换后: 每行末加 "'"，闭合 YAML 字符串` \
+              >> "./mihomo-ruleset/${domain}.yaml"
+
+            # 处理 fakeip-filter 和 fakeip-filter-lite 的文本文件生成
+            curl -sSL "${domains_download_url}/${domain}.list" | sed \
+              -e 's/^DOMAIN,//' `# 原始格式: "DOMAIN,example.com"，转换后: "example.com"，删除 DOMAIN 前缀` \
+              -e 's/^DOMAIN-SUFFIX,/+\./' `# 原始格式: "DOMAIN-SUFFIX,example.com"，转换后: "+.example.com"，将前缀替换为 "+." 表示后缀` \
+              -e 's/^DOMAIN-REGEX,//' `# 原始格式: "DOMAIN-REGEX,regex_pattern"，转换后: "regex_pattern"，删除前缀保留正则表达式` \
+              -e 's/^\.//' `# 原始格式: ".example.com"（若存在），转换后: "example.com"，删除行首的点号` \
+              > "./mihomo-ruleset/${domain}.list"
+          else
+            # 处理其他 domain 的 YAML 文件生成
+            curl -sSL "${domains_download_url}/${domain}.list" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,' | sed \
+              -e "s/^DOMAIN,/  - '/" `# 原始格式: "DOMAIN,example.com"，转换后: "  - 'example.com"，将 DOMAIN 前缀替换为 YAML 列表项开头` \
+              -e "s/^DOMAIN-SUFFIX,/  - '+\./" `# 原始格式: "DOMAIN-SUFFIX,example.com"，转换后: "  - '+.example.com"，为后缀域名添加 "+."` \
+              -e "s/$/'/" `# 原始格式: 每行末无引号，转换后: 每行末加 "'"，闭合 YAML 字符串` \
+              >> "./mihomo-ruleset/${domain}.yaml"
+
+            # 处理其他 domain 的文本文件生成
+            curl -sSL "${domains_download_url}/${domain}.list" | grep -E 'DOMAIN,|DOMAIN-SUFFIX,' | sed \
+              -e 's/^DOMAIN,//' `# 原始格式: "DOMAIN,example.com"，转换后: "example.com"，删除 DOMAIN 前缀` \
+              -e 's/^DOMAIN-SUFFIX,/+\./' `# 原始格式: "DOMAIN-SUFFIX,example.com"，转换后: "+.example.com"，将前缀替换为 "+." 表示后缀` \
+              > "./mihomo-ruleset/${domain}.list"
+          fi
             mkdir -p "./tools/domains/${domain}/"
             cp "./mihomo-ruleset/${domain}.list" "./tools/domains/${domain}/${domain}.list"
           done
@@ -63,7 +87,7 @@ jobs:
 
       - name: Download and unzip `mihomo` core
         run: |
-          curl -sSL https://github.com/DustinWin/proxy-tools/releases/download/mihomo/mihomo-alpha-linux-amd64.tar.gz | tar -zxf - -C ./tools/
+          wget https://github.com/DustinWin/proxy-tools/releases/download/mihomo/mihomo-alpha-linux-amd64.tar.gz -O - | tar -zxf - -C ./tools/
           mv -f ./tools/CrashCore ./tools/mihomo
 
       - name: Generate `mihomo` rule-set (mrs)
