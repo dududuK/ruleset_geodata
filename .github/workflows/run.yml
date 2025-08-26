@@ -36,7 +36,7 @@ jobs:
       - name: Generate `mihomo` rule-set
         run: |
           mkdir -p ./mihomo-ruleset/ ./tools/domains/ ./tools/rules/
-          domains=(ads ai apple-cn cn appletv bilibili disney fakeip-filter-lite fakeip-filter games-cn google-cn max microsoft-cn netflix primevideo private proxy proxylite tiktok tld-cn tld-proxy trackerslist youtube)
+          domains=(fakeip-filter private microsoft-cn apple-cn google-cn games-cn netflix disney max primevideo appletv youtube tiktok bilibili spotify games ai networktest tld-proxy proxy proxylite cn cn-lite)
           archs=(applications networktest)
 
           generate_files() {
