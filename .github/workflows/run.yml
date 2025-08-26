@@ -101,7 +101,7 @@ jobs:
 
       - name: Generate `mihomo` rule-set (mrs)
         run: |
-          domains=(ads ai cn apple-cn appletv bilibili disney fakeip-filter-lite fakeip-filter games-cn google-cn max microsoft-cn netflix primevideo private proxy proxylite tiktok tld-cn tld-proxy trackerslist youtube)
+          domains=(fakeip-filter private microsoft-cn apple-cn google-cn games-cn netflix disney max primevideo appletv youtube tiktok bilibili spotify games ai networktest tld-proxy proxy proxylite cn cn-lite)
           cd ./tools/
           chmod +x ./mihomo
           for domain in "${domains[@]}"; do
