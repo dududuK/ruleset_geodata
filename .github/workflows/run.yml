@@ -16,16 +16,16 @@ jobs:
       - name: Set variables
         run: |
           echo "update_version=$(date -d '+8 hours' +%Y-%m-%d)" >> ${GITHUB_ENV}
-          echo "domains_download_url=https://github.com/DustinWin/domain-list-custom/releases/download/domains" >> ${GITHUB_ENV}
+          echo "domains_download_url=https://github.com/dududuK/domain-list-custom/releases/download/domains" >> ${GITHUB_ENV}
         shell: bash
 
       - name: Clone Repository
         uses: actions/checkout@v5
 
-      - name: Checkout DustinWin/domain-list-custom
+      - name: Checkout dududuK/domain-list-custom
         uses: actions/checkout@v5
         with:
-          repository: DustinWin/domain-list-custom
+          repository: dududuK/domain-list-custom
           path: custom
 
       - name: Setup Go
