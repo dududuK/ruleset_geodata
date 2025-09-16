@@ -42,7 +42,8 @@ jobs:
 
           for domain in "${domains[@]}"; do
             mkdir -p "./tools/domains/${domain}/"
-            curl -sSL "${domains_download_url}/${domain}.list" | grep -E '^(DOMAIN-SUFFIX|DOMAIN),' | sed -e 's/^DOMAIN-SUFFIX,/+\./' -e 's/^DOMAIN,//' >> "./tools/domains/${domain}/${domain}.list"
+            curl -sSL "${domains_download_url}/${domain}.list" | awk -F, '{gsub(/^[ \t]+/, "", $1); if ($1=="DOMAIN-SUFFIX") print "+."$2; else if ($1=="DOMAIN") print $2}' >> "./tools/domains/${domain}/${domain}.list"
+
 
           done
 
