@@ -42,7 +42,11 @@ jobs:
 
           for domain in "${domains[@]}"; do
             mkdir -p "./tools/domains/${domain}/"
-            curl -sSL "${domains_download_url}/${domain}.list" | sed -n -e 's/^DOMAIN,//p' -e 's/^DOMAIN-SUFFIX,/\+\./p' >> "./tools/domains/${domain}/${domain}.list"
+            curl -sSL "${domains_download_url}/${domain}.list" \
+              | grep -E '^(DOMAIN|DOMAIN-SUFFIX),' \
+              | sed -e 's/DOMAIN,//' -e 's/DOMAIN-SUFFIX,/\+\./' \
+              >> "./tools/domains/${domain}/${domain}.list"
+
 
 
 
