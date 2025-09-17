@@ -37,7 +37,7 @@ jobs:
       - name: Download `mihomo` rule-set files
         run: |
           mkdir -p ./mihomo-ruleset/
-          domains=(ads trackerslist microsoft-cn apple-cn google-cn games-cn netflix disney max primevideo appletv youtube tiktok bilibili spotify media games ai tld-proxy gfw proxy cn cn-lite)
+          domains=(proxylite ads trackerslist microsoft-cn apple-cn google-cn games-cn netflix disney max primevideo appletv youtube tiktok bilibili spotify media games ai tld-proxy gfw proxy cn cn-lite)
           archs=(applications networktest)
 
           for domain in "${domains[@]}"; do
