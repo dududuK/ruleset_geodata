@@ -9,6 +9,10 @@ on:
     paths-ignore:
       - "**/README.md"
 
+permissions:
+  contents: write
+  actions: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,16 +24,16 @@ jobs:
         shell: bash
 
       - name: Clone Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Checkout dududuK/domain-list-custom
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           repository: dududuK/domain-list-custom
           path: custom
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: ./custom/go.mod
           cache-dependency-path: ./custom/go.sum
