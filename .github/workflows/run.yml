@@ -72,8 +72,7 @@ jobs:
 
       - name: Generate `mihomo` rule-set (mrs) and move .list files
         run: |
-          curl -L https://github.com/DustinWin/proxy-tools/releases/download/mihomo/mihomo-meta-linux-amd64v3.tar.gz | tar -zx -C ./tools/
-          mv -f ./tools/CrashCore ./tools/mihomo
+          curl -fsS -o ./tools/mihomo -L https://github.com/DustinWin/proxy-tools/releases/download/mihomo/mihomo-meta-linux-amd64-v3.upx
 
           cd ./tools/
           chmod +x ./mihomo
