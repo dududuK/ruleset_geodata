@@ -46,16 +46,7 @@ jobs:
 
           for domain in "${domains[@]}"; do
             mkdir -p "./tools/domains/${domain}/"
-            raw=$(curl -sSL "${domains_download_url}/${domain}.list")
-
-            # 提取 DOMAIN-KEYWORD 行，保留 classical 格式写入 -keyword.list
-            kw=$(echo "$raw" | grep '^DOMAIN-KEYWORD,')
-            if [ -n "$kw" ]; then
-              echo "$kw" > "./mihomo-ruleset/${domain}-keyword.list"
-            fi
-
-            # 其余行（DOMAIN / DOMAIN-SUFFIX）转换为 domain text 格式
-            echo "$raw" | grep -v '^DOMAIN-KEYWORD,' | sed -e 's/DOMAIN,//' -e 's/DOMAIN-SUFFIX,/+\./' >> "./tools/domains/${domain}/${domain}.list"
+            curl -sSL "${domains_download_url}/${domain}.list" | sed -e 's/DOMAIN,//' -e 's/DOMAIN-SUFFIX,/+\./' >> "./tools/domains/${domain}/${domain}.list"
           done
 
           mkdir -p ./tmp/ ./tools/domains/fakeip-filter/
