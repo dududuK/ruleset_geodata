@@ -46,21 +46,30 @@ jobs:
 
           for domain in "${domains[@]}"; do
             mkdir -p "./tools/domains/${domain}/"
-            curl -sSL "${domains_download_url}/${domain}.list" | sed -e 's/DOMAIN,//' -e 's/DOMAIN-SUFFIX,/\+\./' >> "./tools/domains/${domain}/${domain}.list"
+            raw=$(curl -sSL "${domains_download_url}/${domain}.list")
+
+            # 提取 DOMAIN-KEYWORD 行，保留 classical 格式写入 -keyword.list
+            kw=$(echo "$raw" | grep '^DOMAIN-KEYWORD,')
+            if [ -n "$kw" ]; then
+              echo "$kw" > "./mihomo-ruleset/${domain}-keyword.list"
+            fi
+
+            # 其余行（DOMAIN / DOMAIN-SUFFIX）转换为 domain text 格式
+            echo "$raw" | grep -v '^DOMAIN-KEYWORD,' | sed -e 's/DOMAIN,//' -e 's/DOMAIN-SUFFIX,/+\./' >> "./tools/domains/${domain}/${domain}.list"
           done
 
           mkdir -p ./tmp/ ./tools/domains/fakeip-filter/
-          curl -sSL "${domains_download_url}/fakeip-filter.list" | awk '!/^DOMAIN-REGEX,/' | sed -e 's/DOMAIN,//' -e 's/DOMAIN-SUFFIX,/\+\./' > ./tmp/temp-fakeip-filter-domains.txt
+          curl -sSL "${domains_download_url}/fakeip-filter.list" | awk '!/^DOMAIN-REGEX,/' | sed -e 's/DOMAIN,//' -e 's/DOMAIN-SUFFIX,/+\./' > ./tmp/temp-fakeip-filter-domains.txt
           curl -sSL "${domains_download_url}/fakeip-filter.list" | awk '/^DOMAIN-REGEX,/' | sed -e 's/\\s/ /' -e 's/\\./\./g' -e 's/\[\^.\]+/*/g' -e 's/\^\.\*/\^\+/' -e 's/.*\^//; s/\$//' >> ./tmp/temp-fakeip-filter-domains.txt
           sort --ignore-case ./tmp/temp-fakeip-filter-domains.txt >> ./tools/domains/fakeip-filter/fakeip-filter.list
 
           mkdir -p ./tools/domains/fakeip-filter-lite/
-          curl -sSL "${domains_download_url}/fakeip-filter-lite.list" | awk '!/^DOMAIN-REGEX,/' | sed -e 's/DOMAIN,//' -e 's/DOMAIN-SUFFIX,/\+\./' > ./tmp/temp-fakeip-filter-lite-domains.txt
+          curl -sSL "${domains_download_url}/fakeip-filter-lite.list" | awk '!/^DOMAIN-REGEX,/' | sed -e 's/DOMAIN,//' -e 's/DOMAIN-SUFFIX,/+\./' > ./tmp/temp-fakeip-filter-lite-domains.txt
           curl -sSL "${domains_download_url}/fakeip-filter-lite.list" | awk '/^DOMAIN-REGEX,/' | sed -e 's/\\./\./g' -e 's/\[\^.\]+/*/g' -e 's/\^\.\*/\^\+/' -e 's/.*\^//; s/\$//' >> ./tmp/temp-fakeip-filter-lite-domains.txt
           sort --ignore-case ./tmp/temp-fakeip-filter-lite-domains.txt >> ./tools/domains/fakeip-filter-lite/fakeip-filter-lite.list
 
           mkdir -p ./tools/domains/private/
-          curl -sSL "${domains_download_url}/private.list" | awk '!/^DOMAIN-REGEX,/' | sed -e 's/DOMAIN,//' -e 's/DOMAIN-SUFFIX,/\+\./' > ./tmp/temp-private-domains.txt
+          curl -sSL "${domains_download_url}/private.list" | awk '!/^DOMAIN-REGEX,/' | sed -e 's/DOMAIN,//' -e 's/DOMAIN-SUFFIX,/+\./' > ./tmp/temp-private-domains.txt
           curl -sSL "${domains_download_url}/private.list" | awk '/^DOMAIN-REGEX,/' | sed -e 's/\\./\./g' -e 's/\[\^.\]+/*/g' -e 's/\^\.\*/\^\+/' -e 's/.*\^//; s/\$//' >> ./tmp/temp-private-domains.txt
           sort --ignore-case ./tmp/temp-private-domains.txt >> ./tools/domains/private/private.list
           rm -f ./tmp/*
